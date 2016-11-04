@@ -10,13 +10,14 @@
 #include <vector>
 
 //consts
-const unsigned int MIN_NUM_FEATURES = 300; //minimum number of point fetaures
-const unsigned int SAMPLE_PARTS = 4; // Numero de partes en la que dividirá la imagen en X y en Y
+const unsigned int MIN_NUM_FEATURES = 20; //minimum number of point fetaures
+const unsigned int SAMPLE_PARTS = 3; // Numero de partes en la que dividirá la imagen en X y en Y
 
 int main(int argc, char *argv[]) 
 {
     cv::VideoCapture camera; //OpenCV video capture object
     cv::Mat image; //OpenCV image object
+    cv::Mat image2;
 	int cam_id; //camera id . Associated to device number in /dev/videoX
     cv::Ptr<cv::ORB> orb_detector = cv::ORB::create(); //ORB point feature detector
     orb_detector->setMaxFeatures(MIN_NUM_FEATURES);
@@ -62,6 +63,13 @@ int main(int argc, char *argv[])
             cv::waitKey();
         }
 
+        //Read image and check it. Blocking call up to a new image arrives from camera.
+        if(!camera.read(image2)) 
+		{
+            std::cout << "No image" << std::endl;
+            cv::waitKey();
+        }
+
         // Se crea un bucle para recorrer todos los rincones de la imagen
         // en este caso se dividirá la imagen por los trozos que indique la constante 
         // SAMPLE_PARTS.
@@ -95,11 +103,26 @@ int main(int argc, char *argv[])
 		        cv::drawKeypoints( image, point_set, image, 255, cv::DrawMatchesFlags::DEFAULT );     
 		    }
         } 
+
+        // Detectar puntos sin máscara
+        
+        //clear previous points
+        point_set.clear(); 
+        
+        //detect and compute(extract) features
+        orb_detector->detectAndCompute(image2, cv::noArray(), point_set, descriptor_set);
+
+        //draw points on the image
+        cv::drawKeypoints( image2, point_set, image2, 255, cv::DrawMatchesFlags::DEFAULT ); 
+
                 
     //********************************************************************
 		
-        //show image
-        cv::imshow("Output Window", image);
+        //Show image 1
+        cv::imshow("Output Window ORB Mask", image);
+
+        //Show image 2
+        cv::imshow("Output Window no ORB Mask", image2);
 
 		//Waits 1 millisecond to check if a key has been pressed. If so, breaks the loop. Otherwise continues.
         if(cv::waitKey(1) >= 0) break;
